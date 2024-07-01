@@ -566,7 +566,7 @@ class SANMEncoderExport(nn.Module):
     def forward(self, speech: torch.Tensor, speech_lengths: torch.Tensor, online: bool = False):
         if not online:
             speech = speech * self._output_size**0.5
-        mask = self.make_pad_mask(speech_lengths)
+        mask = self.make_pad_mask(speech_lengths, max_seq_len=speech.shape[1])
         mask = self.prepare_mask(mask)
         if self.embed is None:
             xs_pad = speech

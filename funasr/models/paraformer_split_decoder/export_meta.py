@@ -30,23 +30,23 @@ def export_rebuild_model(model, **kwargs):
     model.export_output_names = types.MethodType(export_output_names, model)
     model.export_dynamic_axes = types.MethodType(export_dynamic_axes, model)
     model.export_name = types.MethodType(export_name, model)
-
-    model.export_name = 'model'
     return model
 
 
 def export_forward(
     self,
-    speech: torch.Tensor,
-    speech_lengths: torch.Tensor,
+    enc: torch.Tensor,
+    enc_len: torch.Tensor,
 ):
     # a. To device
-    batch = {"speech": speech, "speech_lengths": speech_lengths}
+    # batch = {"speech": speech, "speech_lengths": speech_lengths}
     # batch = to_device(batch, device=self.device)
 
-    enc, enc_len = self.encoder(**batch)
+    # enc, enc_len = self.encoder(**batch)
     mask = self.make_pad_mask(enc_len, max_seq_len=enc.size(1))[:, None, :]
-    pre_acoustic_embeds, pre_token_length, alphas, pre_peak_index = self.predictor(enc, mask)
+    pre_acoustic_embeds, pre_token_length, alphas, pre_peak_index = self.predictor(
+        enc, mask
+    )
     pre_token_length = pre_token_length.floor().type(torch.int32)
 
     decoder_out, _ = self.decoder(enc, enc_len, pre_acoustic_embeds, pre_token_length)
@@ -57,13 +57,19 @@ def export_forward(
 
 
 def export_dummy_inputs(self):
-    speech = torch.randn(2, 30, 560).to(torch.float16)
-    speech_lengths = torch.tensor([6, 30], dtype=torch.int32)
-    return (speech, speech_lengths)
+    import numpy as np
+
+    enc = torch.from_numpy(np.load("/mnt/local-storage/zhuangzhong/FunASR/enc.npy"))
+    enc_len = torch.from_numpy(
+        np.load("/mnt/local-storage/zhuangzhong/FunASR/enc_len.npy")
+    )
+    # speech = torch.randn(1, 50, 560)
+    # speech_lengths = torch.tensor([1], dtype=torch.int32)
+    return (enc, enc_len)
 
 
 def export_input_names(self):
-    return ["speech", "speech_lengths"]
+    return ["enc", "enc_len"]
 
 
 def export_output_names(self):
@@ -72,10 +78,8 @@ def export_output_names(self):
 
 def export_dynamic_axes(self):
     return {
-        "speech": {0: "batch_size", 1: "feats_length"},
-        "speech_lengths": {
-            0: "batch_size",
-        },
+        "enc": {0: "batch_size", 1: "feats_length"},
+        "enc_len": {0: "batch_size"},
         "logits": {0: "batch_size", 1: "logits_length"},
     }
 
@@ -83,4 +87,4 @@ def export_dynamic_axes(self):
 def export_name(
     self,
 ):
-    return "model_fp16_v1.onnx"
+    return "model.onnx"

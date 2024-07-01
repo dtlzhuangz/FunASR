@@ -14,12 +14,6 @@ def export_rebuild_model(model, **kwargs):
     encoder_class = tables.encoder_classes.get(kwargs["encoder"] + "Export")
     model.encoder = encoder_class(model.encoder, onnx=is_onnx)
 
-    predictor_class = tables.predictor_classes.get(kwargs["predictor"] + "Export")
-    model.predictor = predictor_class(model.predictor, onnx=is_onnx)
-
-    decoder_class = tables.decoder_classes.get(kwargs["decoder"] + "Export")
-    model.decoder = decoder_class(model.decoder, onnx=is_onnx)
-
     from funasr.utils.torch_function import sequence_mask
 
     model.make_pad_mask = sequence_mask(kwargs["max_seq_len"], flip=False)
@@ -30,8 +24,6 @@ def export_rebuild_model(model, **kwargs):
     model.export_output_names = types.MethodType(export_output_names, model)
     model.export_dynamic_axes = types.MethodType(export_dynamic_axes, model)
     model.export_name = types.MethodType(export_name, model)
-
-    model.export_name = 'model'
     return model
 
 
@@ -45,19 +37,27 @@ def export_forward(
     # batch = to_device(batch, device=self.device)
 
     enc, enc_len = self.encoder(**batch)
-    mask = self.make_pad_mask(enc_len, max_seq_len=enc.size(1))[:, None, :]
-    pre_acoustic_embeds, pre_token_length, alphas, pre_peak_index = self.predictor(enc, mask)
-    pre_token_length = pre_token_length.floor().type(torch.int32)
+    # mask = self.make_pad_mask(enc_len)[:, None, :]
+    # pre_acoustic_embeds, pre_token_length, alphas, pre_peak_index = self.predictor(enc, mask)
+    # pre_token_length = pre_token_length.floor().type(torch.int32)
 
-    decoder_out, _ = self.decoder(enc, enc_len, pre_acoustic_embeds, pre_token_length)
-    decoder_out = torch.log_softmax(decoder_out, dim=-1)
+    # decoder_out, _ = self.decoder(enc, enc_len, pre_acoustic_embeds, pre_token_length)
+    # decoder_out = torch.log_softmax(decoder_out, dim=-1)
     # sample_ids = decoder_out.argmax(dim=-1)
 
-    return decoder_out, pre_token_length
+    return enc, enc_len
 
 
 def export_dummy_inputs(self):
-    speech = torch.randn(2, 30, 560).to(torch.float16)
+    # import numpy as np
+
+    # speech = torch.from_numpy(
+    #     np.load("/mnt/local-storage/zhuangzhong/FunASR/feats.npy")
+    # )
+    # speech_lengths = torch.from_numpy(
+    #     np.load("/mnt/local-storage/zhuangzhong/FunASR/feats_len.npy")
+    # )
+    speech = torch.randn(2, 30, 560)
     speech_lengths = torch.tensor([6, 30], dtype=torch.int32)
     return (speech, speech_lengths)
 
@@ -67,7 +67,7 @@ def export_input_names(self):
 
 
 def export_output_names(self):
-    return ["logits", "token_num"]
+    return ["enc", "enc_len"]
 
 
 def export_dynamic_axes(self):
@@ -76,11 +76,12 @@ def export_dynamic_axes(self):
         "speech_lengths": {
             0: "batch_size",
         },
-        "logits": {0: "batch_size", 1: "logits_length"},
+        "enc": {0: "batch_size", 1: "encoder_length"},
+        "enc_len": {0: "batch_size"},
     }
 
 
 def export_name(
     self,
 ):
-    return "model_fp16_v1.onnx"
+    return "model.onnx"
