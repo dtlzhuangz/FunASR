@@ -740,12 +740,12 @@ class ParaformerSANMDecoder_split_decoderExport(torch.nn.Module):
     ):
 
         tgt = ys_in_pad
-        tgt_mask = self.make_pad_mask(ys_in_lens)
+        tgt_mask = self.make_pad_mask(ys_in_lens, max_seq_len=tgt.size(1))
         tgt_mask, _ = self.prepare_mask(tgt_mask)
         # tgt_mask = myutils.sequence_mask(ys_in_lens, device=tgt.device)[:, :, None]
 
         memory = hs_pad
-        memory_mask = self.make_pad_mask(hlens)
+        memory_mask = self.make_pad_mask(hlens, max_seq_len=tgt.size(1))
         _, memory_mask = self.prepare_mask(memory_mask)
         # memory_mask = myutils.sequence_mask(hlens, device=memory.device)[:, None, :]
 
@@ -939,12 +939,12 @@ class ParaformerSANMDecoderOnline_split_decoderExport(torch.nn.Module):
     ):
 
         tgt = ys_in_pad
-        tgt_mask = self.make_pad_mask(ys_in_lens)
+        tgt_mask = self.make_pad_mask(ys_in_lens, max_seq_len=tgt.size(1))
         tgt_mask, _ = self.prepare_mask(tgt_mask)
         # tgt_mask = myutils.sequence_mask(ys_in_lens, device=tgt.device)[:, :, None]
 
         memory = hs_pad
-        memory_mask = self.make_pad_mask(hlens)
+        memory_mask = self.make_pad_mask(hlens, max_seq_len=memory.size(1))
         _, memory_mask = self.prepare_mask(memory_mask)
         # memory_mask = myutils.sequence_mask(hlens, device=memory.device)[:, None, :]
 
@@ -1205,12 +1205,12 @@ class ParaformerDecoderSANExport(torch.nn.Module):
     ):
 
         tgt = ys_in_pad
-        tgt_mask = self.make_pad_mask(ys_in_lens)
+        tgt_mask = self.make_pad_mask(ys_in_lens, max_seq_len=tgt.size(1))
         tgt_mask, _ = self.prepare_mask(tgt_mask)
         # tgt_mask = myutils.sequence_mask(ys_in_lens, device=tgt.device)[:, :, None]
 
         memory = hs_pad
-        memory_mask = self.make_pad_mask(hlens)
+        memory_mask = self.make_pad_mask(hlens, max_seq_len=memory.size(1))
         _, memory_mask = self.prepare_mask(memory_mask)
         # memory_mask = myutils.sequence_mask(hlens, device=memory.device)[:, None, :]
 

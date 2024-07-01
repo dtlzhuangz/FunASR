@@ -9,7 +9,6 @@ def export(
     model_scripts = model.export(**kwargs)
     export_dir = kwargs.get("output_dir", os.path.dirname(kwargs.get("init_param")))
     os.makedirs(export_dir, exist_ok=True)
-
     if not isinstance(model_scripts, (list, tuple)):
         model_scripts = (model_scripts,)
     for m in model_scripts:
