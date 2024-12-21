@@ -353,7 +353,7 @@ class ContextualParaformer(Paraformer):
         hotwords, hotwords_length = self.proc_hotword(hotwords)
         [bias_embed] = self.eb_infer(hotwords, hotwords_length)
         # index from bias_embed
-        bias_embed = bias_embed.transpose(1, 0, 2)
+        # bias_embed = bias_embed.transpose(1, 0, 2)
         _ind = np.arange(0, len(hotwords)).tolist()
         bias_embed = bias_embed[_ind, hotwords_length.tolist()]
         waveform_list = self.load_data(wav_content, self.frontend.opts.frame_opts.samp_freq)
@@ -439,7 +439,10 @@ class ContextualParaformer(Paraformer):
     def bb_infer(
         self, feats: np.ndarray, feats_len: np.ndarray, bias_embed
     ) -> Tuple[np.ndarray, np.ndarray]:
+        import time
+        t1 = time.time()
         outputs = self.ort_infer_bb([feats, feats_len, bias_embed])
+        print(time.time() - t1)
         return outputs
 
     def eb_infer(self, hotwords, hotwords_length):

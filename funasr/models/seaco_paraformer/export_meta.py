@@ -24,6 +24,7 @@ class ContextualEmbedderExport(torch.nn.Module):
     def forward(self, hotword):
         hotword = self.embedding(hotword).transpose(0, 1)  # batch second
         hw_embed, (_, _) = self.bias_encoder(hotword)
+        hw_embed = hw_embed.transpose(0, 1)
         return hw_embed
 
     def export_dummy_inputs(self):
@@ -53,7 +54,7 @@ class ContextualEmbedderExport(torch.nn.Module):
                 0: "num_hotwords",
             },
             "hw_embed": {
-                1: "num_hotwords",
+                0: "num_hotwords",
             },
         }
 
@@ -167,9 +168,9 @@ def export_backbone_forward(
     decoder_out = decoder_out * dha_mask + dha_pred * (1 - dha_mask)
 
     # get predicted timestamps
-    us_alphas, us_cif_peak = self.predictor.get_upsample_timestmap(enc, mask, pre_token_length)
+    # us_alphas, us_cif_peak = self.predictor.get_upsample_timestmap(enc, mask, pre_token_length)
     
-    return decoder_out, pre_token_length, us_alphas, us_cif_peak
+    return decoder_out, pre_token_length
 
 
 def export_backbone_dummy_inputs(self):
@@ -184,7 +185,7 @@ def export_backbone_input_names(self):
 
 
 def export_backbone_output_names(self):
-    return ["logits", "token_num", "us_alphas", "us_cif_peak"]
+    return ["logits", "token_num"]
 
 
 def export_backbone_dynamic_axes(self):
@@ -195,8 +196,6 @@ def export_backbone_dynamic_axes(self):
         },
         "bias_embed": {0: "batch_size", 1: "num_hotwords"},
         "logits": {0: "batch_size", 1: "logits_length"},
-        "pre_acoustic_embeds": {1: "feats_length1"},
-        "us_alphas": {0: "batch_size", 1: "alphas_length"},
-        "us_cif_peak": {0: "batch_size", 1: "alphas_length"},
+        "pre_acoustic_embeds": {1: "feats_length1"}
     }
 
